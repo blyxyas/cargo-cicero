@@ -8,6 +8,7 @@
 // (Currently there is no way to opt into sysroot crates without `extern crate`.)
 extern crate rustc_driver;
 extern crate rustc_interface;
+extern crate rustc_middle;
 extern crate rustc_session;
 extern crate rustc_span;
 
@@ -22,16 +23,20 @@ extern crate tikv_jemalloc_sys as _;
 
 use clippy_utils::sym;
 use declare_clippy_lint::LintListBuilder;
+use rustc_driver::Compilation;
 use rustc_interface::interface;
+use rustc_interface::interface::Compiler;
+use rustc_middle::ty::TyCtxt;
 use rustc_session::config::ErrorOutputType;
 use rustc_session::{EarlyDiagCtxt, Session};
+use rustc_span::def_id::{CrateNum, LocalDefId};
 use rustc_span::symbol::Symbol;
-
 use std::env;
 use std::fs::read_to_string;
 use std::io::Write as _;
 use std::path::Path;
 use std::process::ExitCode;
+use std::sync::Mutex;
 
 /// If a command-line option matches `find_arg`, then apply the predicate `pred` on its value. If
 /// true, then return it. The parameter is assumed to be either `--arg=value` or `--arg value`.
@@ -131,48 +136,20 @@ impl rustc_driver::Callbacks for RustcCallbacks {
     }
 }
 
-struct ClippyCallbacks {
-    clippy_args_var: Option<String>,
-}
+struct ClippyCallbacks {}
 
 impl rustc_driver::Callbacks for ClippyCallbacks {
     #[expect(rustc::bad_opt_access, reason = "necessary in clippy driver to set `mir_opt_level`")]
     fn config(&mut self, config: &mut interface::Config) {
-        let conf_path = clippy_config::lookup_conf_file();
-        let previous = config.register_lints.take();
-        let clippy_args_var = self.clippy_args_var.take();
-        config.track_state = Some(Box::new(move |sess| {
-            track_clippy_args(sess, clippy_args_var.as_deref());
-            track_files(sess);
-
-            // Trigger a rebuild if CLIPPY_CONF_DIR changes. The value must be a valid string so
-            // changes between dirs that are invalid UTF-8 will not trigger rebuilds
-            sess.env_depinfo.borrow_mut().insert((
-                sym::CLIPPY_CONF_DIR,
-                env::var("CLIPPY_CONF_DIR").ok().map(|dir| Symbol::intern(&dir)),
-            ));
-        }));
         config.register_lints = Some(Box::new(move |sess, lint_store| {
-            // technically we're ~guaranteed that this is none but might as well call anything that
-            // is there already. Certainly it can't hurt.
-            if let Some(previous) = &previous {
-                (previous)(sess, lint_store);
-            }
-
             let mut list_builder = LintListBuilder::default();
-            list_builder.insert(clippy_lints::declared_lints::LINTS);
             list_builder.register(lint_store);
-
-            let conf = clippy_config::Conf::read(sess, &conf_path);
-            clippy_lints::register_lint_passes(lint_store, conf);
-
-            #[cfg(feature = "internal")]
-            clippy_lints_internal::register_lints(lint_store);
         }));
         config.extra_symbols = sym::EXTRA_SYMBOLS.into();
 
         // FIXME: #4825; This is required, because Clippy lints that are based on MIR have to be
-        // run on the unoptimized MIR. On the other hand this results in some false negatives. If
+        // run on the unoptimized MIR. On the other hand this 1
+        // ults in some false negatives. If
         // MIR passes can be enabled / disabled separately, we should figure out, what passes to
         // use for Clippy.
         config.opts.unstable_opts.mir_opt_level = Some(0);
@@ -181,6 +158,20 @@ impl rustc_driver::Callbacks for ClippyCallbacks {
 
         // Disable flattening and inlining of format_args!(), so the HIR matches with the AST.
         config.opts.unstable_opts.flatten_format_args = false;
+    }
+
+    fn after_analysis<'tcx>(&mut self, compiler: &Compiler, tcx: TyCtxt<'tcx>) -> Compilation {
+        let resolutions = tcx.resolutions(());
+
+        resolutions.extern_crate_map.items().all(move |(ldefid, cratenum)| {
+            writeln!(r#""crate_used": "{}""#, tcx.crate_name(*cratenum).as_str());
+            true
+        });
+        // resolutions.extern_crate_map.items().map(|(_, krate)| {
+        //     let crate_name = tcx.crate_name(*krate);
+        //     panic!("{}", crate_name.as_str());
+        // });
+        Compilation::Stop
     }
 }
 

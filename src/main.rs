@@ -36,18 +36,6 @@ pub fn main() {
         return;
     }
 
-    if let Some(pos) = env::args().position(|a| a == "--explain") {
-        if let Some(mut lint) = env::args().nth(pos + 1) {
-            lint.make_ascii_lowercase();
-            process::exit(clippy_lints::explain(
-                &lint.strip_prefix("clippy::").unwrap_or(&lint).replace('-', "_"),
-            ));
-        } else {
-            show_help();
-        }
-        return;
-    }
-
     if let Err(code) = process(env::args().skip(2)) {
         process::exit(code);
     }
