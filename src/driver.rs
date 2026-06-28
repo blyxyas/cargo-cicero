@@ -169,6 +169,17 @@ impl rustc_driver::Callbacks for ClippyCallbacks {
             println!(r#""crate_used": "{}""#, tcx.crate_name(*cratenum).as_str());
             true
         });
+
+        resolutions.module_children.items().all(move |(ldefid, modchildren)| {
+            for modchild in modchildren {
+                println!(
+                    r#""modchild": {{ "name": "{}", "type": "{}"}}"#,
+                    modchild.ident.as_str(),
+                    modchild.res.descr()
+                );
+            }
+            true
+        });
         // resolutions.extern_crate_map.items().map(|(_, krate)| {
         //     let crate_name = tcx.crate_name(*krate);
         //     panic!("{}", crate_name.as_str());

@@ -1,8 +1,62 @@
 "crate_used": "rustc_driver"
 "crate_used": "std"
+"modchild": { "name": "std", "type": "crate"}
+"modchild": { "name": "rustc_driver", "type": "crate"}
+"modchild": { "name": "env", "type": "module"}
+"modchild": { "name": "env", "type": "macro"}
+"modchild": { "name": "PathBuf", "type": "struct"}
+"modchild": { "name": "process", "type": "module"}
+"modchild": { "name": "process", "type": "function"}
+"modchild": { "name": "Command", "type": "struct"}
+"modchild": { "name": "exit", "type": "function"}
+"modchild": { "name": "show_help", "type": "function"}
+"modchild": { "name": "show_version", "type": "function"}
+"modchild": { "name": "main", "type": "function"}
+"modchild": { "name": "ClippyCmd", "type": "struct"}
+"modchild": { "name": "help_message", "type": "function"}
+"modchild": { "name": "_", "type": "trait"}
 "crate_used": "rustc_span"
 "crate_used": "rustc_driver"
 "crate_used": "std"
 "crate_used": "rustc_middle"
 "crate_used": "rustc_session"
 "crate_used": "rustc_interface"
+"modchild": { "name": "std", "type": "crate"}
+"modchild": { "name": "rustc_driver", "type": "crate"}
+"modchild": { "name": "rustc_interface", "type": "crate"}
+"modchild": { "name": "rustc_middle", "type": "crate"}
+"modchild": { "name": "rustc_session", "type": "crate"}
+"modchild": { "name": "rustc_span", "type": "crate"}
+"modchild": { "name": "sym", "type": "module"}
+"modchild": { "name": "LintListBuilder", "type": "struct"}
+"modchild": { "name": "Compilation", "type": "enum"}
+"modchild": { "name": "interface", "type": "module"}
+"modchild": { "name": "Compiler", "type": "struct"}
+"modchild": { "name": "TyCtxt", "type": "struct"}
+"modchild": { "name": "ErrorOutputType", "type": "enum"}
+"modchild": { "name": "EarlyDiagCtxt", "type": "struct"}
+"modchild": { "name": "Session", "type": "struct"}
+"modchild": { "name": "CrateNum", "type": "struct"}
+"modchild": { "name": "LocalDefId", "type": "struct"}
+"modchild": { "name": "Symbol", "type": "struct"}
+"modchild": { "name": "env", "type": "module"}
+"modchild": { "name": "env", "type": "macro"}
+"modchild": { "name": "File", "type": "struct"}
+"modchild": { "name": "read_to_string", "type": "function"}
+"modchild": { "name": "BufWriter", "type": "struct"}
+"modchild": { "name": "Path", "type": "struct"}
+"modchild": { "name": "ExitCode", "type": "struct"}
+"modchild": { "name": "Mutex", "type": "struct"}
+"modchild": { "name": "arg_value", "type": "function"}
+"modchild": { "name": "has_arg", "type": "function"}
+"modchild": { "name": "track_clippy_args", "type": "function"}
+"modchild": { "name": "track_files", "type": "function"}
+"modchild": { "name": "DefaultCallbacks", "type": "struct"}
+"modchild": { "name": "DefaultCallbacks", "type": "unit struct"}
+"modchild": { "name": "RustcCallbacks", "type": "struct"}
+"modchild": { "name": "ClippyCallbacks", "type": "struct"}
+"modchild": { "name": "display_help", "type": "function"}
+"modchild": { "name": "BUG_REPORT_URL", "type": "constant"}
+"modchild": { "name": "main", "type": "function"}
+"modchild": { "name": "help_message", "type": "function"}
+"modchild": { "name": "_", "type": "trait"}
