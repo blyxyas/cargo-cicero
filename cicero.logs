@@ -1,0 +1,8 @@
+"crate_used": "rustc_driver"
+"crate_used": "std"
+"crate_used": "rustc_span"
+"crate_used": "rustc_driver"
+"crate_used": "std"
+"crate_used": "rustc_middle"
+"crate_used": "rustc_session"
+"crate_used": "rustc_interface"

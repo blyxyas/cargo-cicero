@@ -32,8 +32,8 @@ use rustc_session::{EarlyDiagCtxt, Session};
 use rustc_span::def_id::{CrateNum, LocalDefId};
 use rustc_span::symbol::Symbol;
 use std::env;
-use std::fs::read_to_string;
-use std::io::Write as _;
+use std::fs::{File, read_to_string};
+use std::io::{BufWriter, Write as _};
 use std::path::Path;
 use std::process::ExitCode;
 use std::sync::Mutex;
@@ -136,7 +136,9 @@ impl rustc_driver::Callbacks for RustcCallbacks {
     }
 }
 
-struct ClippyCallbacks {}
+struct ClippyCallbacks {
+    writer: BufWriter<File>,
+}
 
 impl rustc_driver::Callbacks for ClippyCallbacks {
     #[expect(rustc::bad_opt_access, reason = "necessary in clippy driver to set `mir_opt_level`")]
@@ -164,7 +166,7 @@ impl rustc_driver::Callbacks for ClippyCallbacks {
         let resolutions = tcx.resolutions(());
 
         resolutions.extern_crate_map.items().all(move |(ldefid, cratenum)| {
-            writeln!(r#""crate_used": "{}""#, tcx.crate_name(*cratenum).as_str());
+            println!(r#""crate_used": "{}""#, tcx.crate_name(*cratenum).as_str());
             true
         });
         // resolutions.extern_crate_map.items().map(|(_, krate)| {
@@ -299,9 +301,10 @@ fn main() -> ExitCode {
             || arg_value(&orig_args, "--print", |val| val != "crate-root-lint-levels").is_some();
 
         let clippy_enabled = !cap_lints_allow && relevant_package && !info_query;
+        let writer = BufWriter::new(File::create("cicero.logs").unwrap());
         if clippy_enabled {
             args.extend(clippy_args);
-            rustc_driver::run_compiler(&args, &mut ClippyCallbacks { clippy_args_var });
+            rustc_driver::run_compiler(&args, &mut ClippyCallbacks { writer });
         } else {
             rustc_driver::run_compiler(&args, &mut RustcCallbacks { clippy_args_var });
         }
