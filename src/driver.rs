@@ -7,10 +7,13 @@
 // FIXME: switch to something more ergonomic here, once available.
 // (Currently there is no way to opt into sysroot crates without `extern crate`.)
 extern crate rustc_driver;
+extern crate rustc_hir;
 extern crate rustc_interface;
 extern crate rustc_middle;
 extern crate rustc_session;
 extern crate rustc_span;
+
+use rustc_hir::Node;
 
 /// See docs in <https://github.com/rust-lang/rust/blob/HEAD/compiler/rustc/src/main.rs>
 /// and <https://github.com/rust-lang/rust/pull/146627> for why we need this.
@@ -37,6 +40,8 @@ use std::io::{BufWriter, Write as _};
 use std::path::Path;
 use std::process::ExitCode;
 use std::sync::Mutex;
+
+use anstream::{self, AutoStream};
 
 /// If a command-line option matches `find_arg`, then apply the predicate `pred` on its value. If
 /// true, then return it. The parameter is assumed to be either `--arg=value` or `--arg value`.
@@ -134,13 +139,33 @@ impl rustc_driver::Callbacks for RustcCallbacks {
         }));
         config.extra_symbols = sym::EXTRA_SYMBOLS.into();
     }
+
+    // fn after_expansion<'tcx>(&mut self, compiler: &Compiler, tcx: TyCtxt<'tcx>) -> Compilation {
+    //     for definition in tcx.hir_crate_items(()).definitions() {
+    //         let node = tcx.hir_node_by_def_id(definition);
+    //         let ident = if let Some(ident) = node.ident() {
+    //             ident
+    //         } else if let Node::Ctor(variant_data) = node {
+    //             variant_data
+    //                 .ctor_hir_id()
+    //                 .map(|ctor_id| tcx.parent_hir_node(ctor_id))
+    //                 .and_then(|parent| parent.ident())
+    //                 .unwrap()
+    //         } else {
+    //             unreachable!()
+    //         };
+
+    //         println!(r#""dep_ident": {}"#, ident);
+    //     }
+    //     Compilation::Continue
+    // }
 }
 
-struct ClippyCallbacks {
+struct CiceroCallbacks {
     writer: BufWriter<File>,
 }
 
-impl rustc_driver::Callbacks for ClippyCallbacks {
+impl rustc_driver::Callbacks for CiceroCallbacks {
     #[expect(rustc::bad_opt_access, reason = "necessary in clippy driver to set `mir_opt_level`")]
     fn config(&mut self, config: &mut interface::Config) {
         config.register_lints = Some(Box::new(move |sess, lint_store| {
@@ -315,7 +340,7 @@ fn main() -> ExitCode {
         let writer = BufWriter::new(File::create("cicero.logs").unwrap());
         if clippy_enabled {
             args.extend(clippy_args);
-            rustc_driver::run_compiler(&args, &mut ClippyCallbacks { writer });
+            rustc_driver::run_compiler(&args, &mut CiceroCallbacks { writer });
         } else {
             rustc_driver::run_compiler(&args, &mut RustcCallbacks { clippy_args_var });
         }
